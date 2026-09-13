@@ -4,6 +4,8 @@
 
 An experimental macOS arm64 workaround for directed-rounding failures in Apple Accelerate BLAS matrix multiplication, investigated with MATLAB R2026a and INTLAB.
 
+**The patch is a C dynamic library for Apple Accelerate.** MATLAB and INTLAB are its motivating use case; the library itself does not depend on either. Bash scripts build the C sources, launch MATLAB and run tests. MATLAB functions provide the optional MATLAB/INTLAB checks. Python is not required.
+
 The patch forwards the caller's rounding direction to Accelerate's internal BLAS callbacks and restores each worker's previous direction afterward. **It preserves Accelerate's own matrix partitioning, kernels and parallel execution.** It does not replace multiplication with a single-threaded implementation.
 
 This is a community workaround, not an Apple, MathWorks or INTLAB release. It uses an exported, non-public dispatch entry and must be revalidated after OS or MATLAB changes. See [coverage and limitations](docs/validation.md).
@@ -11,7 +13,7 @@ This is a community workaround, not an Apple, MathWorks or INTLAB release. It us
 ## Requirements
 
 - An Apple Silicon Mac running a compatible macOS. The complete recorded validation used macOS 26.6.2 and an M4 Pro.
-- Python 3.9 or later and Apple Command Line Tools or Xcode with a usable macOS SDK.
+- Bash (the macOS-provided version is sufficient) and Apple Command Line Tools or Xcode with a usable macOS SDK.
 - An Apple Silicon MATLAB installation for MATLAB checks; R2026a Update 5 was tested.
 - A separately installed INTLAB only for the optional INTLAB tests.
 
@@ -24,16 +26,16 @@ Clone the repository, then build from its root:
 ```sh
 git clone https://github.com/taklab-org/INTLAB-rounding-fix.git
 cd INTLAB-rounding-fix
-python3 scripts/build.py
-python3 scripts/test_native.py
-python3 scripts/matlab.py --check
-python3 scripts/matlab.py
+./scripts/build.sh
+./scripts/test_native.sh
+./scripts/matlab.sh --check
+./scripts/matlab.sh
 ```
 
 The last command starts a MATLAB desktop with the patch loaded. To run a batch job:
 
 ```sh
-python3 scripts/matlab.py -batch "your_function"
+./scripts/matlab.sh -batch "your_function"
 ```
 
 The launcher preserves the calling directory unless `-sd` is supplied. It adds the repository's MATLAB functions and build directory to `MATLABPATH`, but does not initialize INTLAB or replace your normal `startup.m`. `--check` deliberately uses an isolated test directory with a no-op startup.
@@ -41,10 +43,12 @@ The launcher preserves the calling directory unless `-sd` is supplied. It adds t
 MATLAB discovery prefers `/Applications/MATLAB_R2026a.app`; otherwise it accepts a single MATLAB app under `/Applications`. For a different location, use:
 
 ```sh
-python3 scripts/build.py --matlab "/path/to/MATLAB.app"
+./scripts/build.sh --matlab "/path/to/MATLAB.app"
 ```
 
-The location is saved only in `build/config.json`. You may also set `MATLAB_ROOT`, or override the launcher with `--matlab`. Rebuild the MEX if switching MATLAB installations. Compiler/SDK discovery uses `xcrun`, with the standard Command Line Tools paths as a fallback; `build.py --cc ... --sdk ...` supports explicit locations. The scripts do not download tools or accept licenses.
+The location is saved only in `build/matlab-root.txt`. You may also set `MATLAB_ROOT`, or override the launcher with `--matlab`. Rebuild the MEX if switching MATLAB installations. Compiler/SDK discovery uses `xcrun`, with the standard Command Line Tools paths as a fallback; `build.sh --cc ... --sdk ...` supports explicit locations. The scripts do not download tools or accept licenses.
+
+When updating from the earlier Python tools, rebuild with `./scripts/build.sh` to create the new plain-text local configuration.
 
 ## Verify the actual computation
 
@@ -62,7 +66,7 @@ The BLAS name alone cannot distinguish patched and unpatched Accelerate. A succe
 For optional diagnostics, start with:
 
 ```sh
-ACCELERATE_ROUNDING_AUDIT=1 python3 scripts/matlab.py --check
+ACCELERATE_ROUNDING_AUDIT=1 ./scripts/matlab.sh --check
 ```
 
 The patch then reports intercepted BLAS calls, incoming rounding mismatches, callback thread IDs and overlapping callbacks. Counters are disabled by default; zeros with auditing disabled do not mean the library failed to load.
@@ -72,24 +76,32 @@ The patch then reports intercepted BLAS calls, incoming rounding mismatches, cal
 Native-only build and tests:
 
 ```sh
-python3 scripts/build.py --native-only
-python3 scripts/test_native.py
+./scripts/build.sh --native-only
+./scripts/test_native.sh
 ```
 
 The native runner compares separate unpatched and patched processes. A baseline rounding failure is recorded rather than treated as a runner failure. Patched tests must pass and must intercept callbacks on BLAS worker threads. A baseline pass on another OS is possible and is not evidence that the patch is needed there. Raw logs and machine-specific results stay in `build/`.
 
+For a native executable that uses Accelerate, set the interposer immediately before executing it from Bash. For example, after the native-only build:
+
+```sh
+(export DYLD_INSERT_LIBRARIES="$PWD/build/libaccelerate_rounding.dylib"; exec ./build/witness)
+```
+
+The native test runner also verifies overlapping worker callbacks with audit counters enabled. Other applications must permit dynamic-library injection; protected launch intermediaries can remove `DYLD_*` variables. Validate each application's actual arithmetic and worker interception. The MATLAB launcher handles its release-specific launch shell separately.
+
 Build with MATLAB support, then run its tests from the repository root:
 
 ```sh
-python3 scripts/build.py
-python3 scripts/matlab.py -sd "$PWD/tests" -batch run_matlab_tests
+./scripts/build.sh
+./scripts/matlab.sh -sd "$PWD/tests" -batch run_matlab_tests
 ```
 
 To include the original `testmm.m`, explicitly provide a private or otherwise exclusively owned INTLAB installation:
 
 ```sh
 INTLAB_ROOT="/path/to/private/Intlab" \
-  python3 scripts/matlab.py -sd "$PWD/tests" -batch run_matlab_tests
+  ./scripts/matlab.sh -sd "$PWD/tests" -batch run_matlab_tests
 ```
 
 This optional test calls `startintlab`, which can write INTLAB's cache. Do not point it at a shared runtime being initialized or used by another job. It runs `testmm(288/512/540/1024)` and a direct interval-containment check. Without `INTLAB_ROOT`, INTLAB tests are skipped explicitly. Formal proof projects should retain their own bootstrap and cache ownership rather than use this test initializer.

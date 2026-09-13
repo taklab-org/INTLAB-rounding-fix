@@ -28,6 +28,8 @@ INTLAB V13's inspected multithreaded self-test used size 220, below the measured
 
 The public source layout was rebuilt and tested independently, including a clean copy under a directory containing spaces. Native tests, MATLAB checks at five sizes, and the optional INTLAB testmm/containment tests passed. A sanitized, machine-readable summary is in [public-layout-validation.json](public-layout-validation.json). The interposer's numerical source remains unchanged from the original tested patch.
 
+After replacing the Python utilities with macOS system Bash 3.2.57, the native and MATLAB/INTLAB tests above were rerun successfully. A clean copy under a path containing spaces passed native-only and MATLAB builds using the system `PATH`, native tests, and the MATLAB 512-size check. Native audit peaks were three overlapping callbacks for the witness and four for the stress test; the clean-copy MATLAB check observed two. Separate launcher interface checks covered quoted paths, argument forwarding, exit status and temporary-rc cleanup. The C interposer was not changed by this migration.
+
 `witness.c` checks all output entries for exact products with values ±(1+2^-54), at n=287,288,512,1024,2048, in both directed modes. It requests Accelerate-managed multithreading and never substitutes a manually partitioned or single-threaded product.
 
 `stress.c` uses signed 53-bit integer numerators divided by 2^52. For 64 sampled outputs per product, it accumulates exact products independently in 128-bit integers and checks the directed BLAS result. It covers four shapes, all four transpose combinations, two rounding directions, and 40 calls from concurrent upward/downward callers. This samples 4,608 outputs, not every entry of every matrix.

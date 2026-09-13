@@ -4,13 +4,15 @@
 
 Apple Silicon版MATLAB R2026aとINTLABで観測した、Apple Accelerate BLASの方向付き丸めの不具合を補う実験パッチです。
 
+**パッチ本体はApple Accelerate向けのC動的ライブラリです。** MATLAB／INTLABは調査のきっかけとなった利用例であり、パッチ本体はどちらにも依存しません。ビルド・MATLAB起動・試験実行にはBash、MATLAB／INTLAB内の検証にはMATLAB関数を使います。Pythonは不要です。
+
 各BLAS計算コールバックへ呼出し元の丸め方向を渡し、終了後にそのスレッドの元の方向へ戻します。**Accelerate自身の行列分割・計算カーネル・並列処理を維持します。** 行列積を単一スレッドへ変更する方式ではありません。
 
 Apple／MathWorks／INTLABの公式修正ではなく、公開SDK外の入口を使います。OSやMATLABの更新後には再検証してください。[検証範囲と制限](docs/validation.md)
 
 ## 必要な環境
 
-- Apple Silicon Mac、Python 3.9以上、使用可能なApple Command Line ToolsまたはXcodeとmacOS SDK。
+- Apple Silicon Mac、macOS標準のBash、使用可能なApple Command Line ToolsまたはXcodeとmacOS SDK。
 - MATLABで使用する場合はApple Silicon版MATLAB。詳細な検証環境はM4 Pro、macOS 26.6.2、R2026a Update 5です。
 - INTLAB試験を行う場合だけ、別途用意したINTLAB。
 
@@ -23,21 +25,23 @@ MATLAB・INTLAB・Appleのライブラリ本体やヘッダは同梱していま
 ```sh
 git clone https://github.com/taklab-org/INTLAB-rounding-fix.git
 cd INTLAB-rounding-fix
-python3 scripts/build.py
-python3 scripts/test_native.py
-python3 scripts/matlab.py --check
-python3 scripts/matlab.py
+./scripts/build.sh
+./scripts/test_native.sh
+./scripts/matlab.sh --check
+./scripts/matlab.sh
 ```
 
-最後のコマンドでパッチ付きMATLABデスクトップを起動します。バッチ処理には `python3 scripts/matlab.py -batch "your_function"` を使用できます。`-sd`を指定しなければ呼出し元の作業ディレクトリを維持します。通常の起動では利用者の`startup.m`を置き換えず、INTLABも自動初期化しません。`--check`だけは何もしないstartupを持つ診断用ディレクトリで実行します。
+最後のコマンドでパッチ付きMATLABデスクトップを起動します。バッチ処理には `./scripts/matlab.sh -batch "your_function"` を使用できます。`-sd`を指定しなければ呼出し元の作業ディレクトリを維持します。通常の起動では利用者の`startup.m`を置き換えず、INTLABも自動初期化しません。`--check`だけは何もしないstartupを持つ診断用ディレクトリで実行します。
 
 MATLABは `/Applications/MATLAB_R2026a.app` を優先して検出し、なければ `/Applications` 内の候補が一つの場合に使用します。別の場所なら次のように指定します。
 
 ```sh
-python3 scripts/build.py --matlab "/path/to/MATLAB.app"
+./scripts/build.sh --matlab "/path/to/MATLAB.app"
 ```
 
 `MATLAB_ROOT`環境変数も使えます。MATLABを変更したらMEXを再ビルドしてください。コンパイラとSDKは`xcrun`で検出し、必要なら `--cc` と `--sdk` で指定します。自動インストールやライセンスへの自動同意は行いません。
+
+MATLABの場所は`build/matlab-root.txt`にデータとして保存します。起動時の`--matlab`でも上書きできます。旧Python版から更新した場合は、最初に`./scripts/build.sh`で再ビルドしてください。
 
 ## 各計算プロセスでの確認
 
@@ -57,29 +61,37 @@ process workerも**各worker自身で**確認してください。単一スレ�
 MATLAB不要のC試験だけをビルドする場合:
 
 ```sh
-python3 scripts/build.py --native-only
-python3 scripts/test_native.py
+./scripts/build.sh --native-only
+./scripts/test_native.sh
 ```
 
 パッチなしでの失敗を記録し、パッチありでの包含成功とBLAS workerへの介入を確認します。別環境でパッチなしでも成功する可能性はあるため、元の失敗をすべてのMacの必須条件にはしていません。
 
+Accelerateを使うネイティブ実行ファイルにも、Bashから実行直前にパッチを指定できます。上記ビルド後の例です。
+
+```sh
+(export DYLD_INSERT_LIBRARIES="$PWD/build/libaccelerate_rounding.dylib"; exec ./build/witness)
+```
+
+試験ランナーでは監査カウンタを有効にして、workerコールバックの重なりも確認します。他のアプリでは動的ライブラリの読込みが許可される必要があり、保護された起動プログラムを経由すると`DYLD_*`が除去される場合があります。アプリごとに実際の数値包含とworkerへの介入を検証してください。MATLABの起動シェルは専用ランチャーで対応しています。
+
 MATLAB対応でビルドした後、MATLAB試験を実行します。
 
 ```sh
-python3 scripts/build.py
-python3 scripts/matlab.py -sd "$PWD/tests" -batch run_matlab_tests
+./scripts/build.sh
+./scripts/matlab.sh -sd "$PWD/tests" -batch run_matlab_tests
 ```
 
 INTLABも含める場合だけ、専用のruntimeを明示します。
 
 ```sh
 INTLAB_ROOT="/path/to/private/Intlab" \
-  python3 scripts/matlab.py -sd "$PWD/tests" -batch run_matlab_tests
+  ./scripts/matlab.sh -sd "$PWD/tests" -batch run_matlab_tests
 ```
 
 この指定は`startintlab`を呼ぶため、INTLABのキャッシュを書き換えることがあります。他のジョブが使用・初期化中の共用runtimeは指定しないでください。原文の`testmm(288/512/540/1024)`と、実際の区間端点による包含検査を行います。未指定時はINTLAB試験を明示的に省略します。
 
-介入回数などの診断には `ACCELERATE_ROUNDING_AUDIT=1 python3 scripts/matlab.py --check` を使えます。通常は計数しないため、統計がゼロでも未読込みとは限りません。
+介入回数などの診断には `ACCELERATE_ROUNDING_AUDIT=1 ./scripts/matlab.sh --check` を使えます。通常は計数しないため、統計がゼロでも未読込みとは限りません。
 
 ## 適用範囲と解除
 

@@ -17,7 +17,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if (nrhs || nlhs != 1)
         mexErrMsgIdAndTxt("roundPatch:args", "Use s=rounding_patch_status().");
     void (*get)(uint64_t *, size_t) = dlsym(RTLD_DEFAULT, "round_patch_stats");
-    if (!get) mexErrMsgIdAndTxt("roundPatch:notLoaded", "Patch not loaded. Start a fresh MATLAB using scripts/matlab.py.");
+    if (!get) mexErrMsgIdAndTxt("roundPatch:notLoaded", "Patch not loaded. Start a fresh MATLAB using scripts/matlab.sh.");
     uint64_t stats[8] = {0}; get(stats, 8);
     const char *fields[] = {"abi", "auditEnabled", "stats", "rounding", "library"};
     plhs[0] = mxCreateStructMatrix(1, 1, 5, fields);

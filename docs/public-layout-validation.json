@@ -42,5 +42,15 @@
   ],
   "intlab_tests_passed": true,
   "path_with_spaces_clean_build_native_and_matlab_check": "passed",
-  "note": "Raw logs and absolute local paths are retained only in ignored build directories."
+  "note": "Raw logs and absolute local paths are retained only in ignored build directories.",
+  "build_and_launch_tools": "macOS system Bash 3.2.57; C interposer; MATLAB checks",
+  "shell_migration_checks": {
+    "native_only_then_matlab_build_with_system_PATH": "passed",
+    "launcher_arguments_quoted_paths_exit_status_cleanup": "passed",
+    "native_patched_peak_overlapping_callbacks": {
+      "witness": 3,
+      "stress": 4
+    },
+    "space_path_matlab_audit_peak_overlapping_callbacks": 2
+  }
 }
