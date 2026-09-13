@@ -1,0 +1,46 @@
+{
+  "date": "2026-09-13",
+  "cpu": "Apple M4 Pro",
+  "os": "macOS 26.6.2 (25G83)",
+  "matlab": "R2026a Update 5 (26.1.0.3346908)",
+  "core_source_sha256": "e83650f33afe04e8ce42f39508d60aab03ea3f0b9afcf176431176a483eba0eb",
+  "native": [
+    {
+      "test": "witness",
+      "patched": false,
+      "exit_code": 1
+    },
+    {
+      "test": "stress",
+      "patched": false,
+      "exit_code": 1
+    },
+    {
+      "test": "witness",
+      "patched": true,
+      "exit_code": 0
+    },
+    {
+      "test": "stress",
+      "patched": true,
+      "exit_code": 0
+    }
+  ],
+  "matlab_sizes": [
+    287,
+    288,
+    512,
+    540,
+    1024
+  ],
+  "matlab_enclosure_failures": 0,
+  "intlab_v13_testmm_sizes": [
+    288,
+    512,
+    540,
+    1024
+  ],
+  "intlab_tests_passed": true,
+  "path_with_spaces_clean_build_native_and_matlab_check": "passed",
+  "note": "Raw logs and absolute local paths are retained only in ignored build directories."
+}

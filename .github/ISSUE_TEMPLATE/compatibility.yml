@@ -1,0 +1,31 @@
+name: Compatibility report
+description: Report a tested machine or a rounding failure.
+title: "Compatibility: CPU / macOS / MATLAB"
+body:
+  - type: input
+    id: cpu
+    attributes:
+      label: CPU model
+      placeholder: Apple M4
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: macOS and MATLAB versions
+      description: Include the MATLAB update number and macOS build if available.
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: Test results
+      description: Include the check summary, BLAS name, sizes and thread limit. Remove personal paths before posting logs.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps and patch revision
+      description: Include the launch command, Git commit or release, and whether INTLAB was used.
