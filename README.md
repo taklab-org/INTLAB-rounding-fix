@@ -6,15 +6,45 @@ An experimental macOS arm64 workaround for directed-rounding failures in Apple A
 
 **The patch is a C dynamic library for Apple Accelerate.** MATLAB and INTLAB are its motivating use case; the library itself does not depend on either. Bash scripts build the C sources, launch MATLAB and run tests. MATLAB functions provide the optional MATLAB/INTLAB checks. Python is not required.
 
-The patch forwards the caller's rounding direction to Accelerate's internal BLAS callbacks and restores each worker's previous direction afterward. **It preserves Accelerate's own matrix partitioning, kernels and parallel execution.** It does not replace multiplication with a single-threaded implementation.
+The patch forwards the caller's rounding direction to Accelerate's internal BLAS callbacks and restores each worker's previous direction afterward. **It uses Accelerate's own parallel kernels.** On non-SME hardware, ABI 2 selects its CPU path instead of the accelerator path that failed the M3 Max rounding tests. It does not replace multiplication with a single-threaded implementation.
 
 This is a community workaround, not an Apple, MathWorks or INTLAB release. It uses an exported, non-public dispatch entry and must be revalidated after OS or MATLAB changes. See [coverage and limitations](docs/validation.md).
 
+## M3 Max repair (ABI 2)
+
+The earlier ABI 1 library loads on the tested M3 Max but fails containment even without MATLAB. ABI 2 adds BLAS-scoped accelerator selection and rounding propagation through `dispatch_apply`. Rebuild both the dylib and MEX, then start a **fresh** MATLAB with `scripts/matlab.sh`. An already running process cannot adopt the new kernel selection.
+
+M3 Max / macOS 26.6.2 / R2026a Update 2 / INTLAB V13 passed the recorded real-double tests, including two process workers. This does not establish a general Update 2 defect or validate every INTLAB operation. CPU fallback has a performance cost. See [diagnosis, evidence and limits](docs/m3-max-validation.md).
+
+## Automatic selection and updating
+
+The launcher injects the patch before MATLAB starts. The library then chooses the BLAS policy from CPU capabilities; no CPU-model option or manual `DYLD_INSERT_LIBRARIES` setting is needed:
+
+| Detected capabilities | Automatic behavior |
+|---|---|
+| No SME/SME2, accelerator selector present (tested M3 Max) | Select Accelerate's CPU kernels and propagate rounding through their parallel callbacks |
+| SME/SME2 present | Preserve Accelerate's native selection and propagate callback rounding |
+| No accelerator selector | Leave the selection unchanged and propagate callback rounding |
+
+This is capability-based selection, not certification of every CPU matching a row. ABI 2 numerical validation covers the recorded M3 Max environment; the SME branch has a policy regression test but has not been numerically rerun on M4.
+
+For an existing checkout, run from its root:
+
+```sh
+git pull --ff-only
+./scripts/build.sh
+./scripts/test_native.sh
+./scripts/matlab.sh --check
+./scripts/matlab.sh
+```
+
+Rebuild both binaries after pulling: Git does not replace the locally generated dylib or MEX. The launcher rejects build metadata from ABI 1 with a rebuild instruction. `--check` prints `ABI=2 cpuFallback=1` on the tested M3 Max, with zero downward/upward violations. `cpuFallback=0` means the native selection was retained; judge acceptance by the numerical checks too. Start subsequent computations with this launcher in a fresh process.
+
 ## Requirements
 
-- An Apple Silicon Mac running a compatible macOS. The complete recorded validation used macOS 26.6.2 and an M4 Pro.
+- An Apple Silicon Mac running a compatible macOS. Recorded validation used macOS 26.6.2: ABI 1 on M4 Pro, ABI 2 on M3 Max. ABI 2 has not been rerun on M4 hardware.
 - Bash (the macOS-provided version is sufficient) and Apple Command Line Tools or Xcode with a usable macOS SDK.
-- An Apple Silicon MATLAB installation for MATLAB checks; R2026a Update 5 was tested.
+- An Apple Silicon MATLAB installation for MATLAB checks; R2026a Update 2 was tested on M3 Max; earlier ABI 1 tests used Update 5 on M4 Pro.
 - A separately installed INTLAB only for the optional INTLAB tests.
 
 No MATLAB, INTLAB or Apple framework binaries/headers are included. Build products stay in ignored `build/`. Native C tests do not require MATLAB or INTLAB.
@@ -69,7 +99,7 @@ For optional diagnostics, start with:
 ACCELERATE_ROUNDING_AUDIT=1 ./scripts/matlab.sh --check
 ```
 
-The patch then reports intercepted BLAS calls, incoming rounding mismatches, callback thread IDs and overlapping callbacks. Counters are disabled by default; zeros with auditing disabled do not mean the library failed to load.
+The patch then reports intercepted BLAS calls by dispatch API, incoming rounding mismatches, callback thread IDs and overlapping callbacks. `report.patch.cpuFallbackSelected` records whether BLAS selected the CPU fallback; capability query counters are collected even with auditing disabled. Callback counters are disabled by default; zero callback counts with auditing disabled do not mean the library failed to load.
 
 ## Tests
 
@@ -104,11 +134,13 @@ INTLAB_ROOT="/path/to/private/Intlab" \
   ./scripts/matlab.sh -sd "$PWD/tests" -batch run_matlab_tests
 ```
 
-This optional test calls `startintlab`, which can write INTLAB's cache. Do not point it at a shared runtime being initialized or used by another job. It runs `testmm(288/512/540/1024)` and a direct interval-containment check. Without `INTLAB_ROOT`, INTLAB tests are skipped explicitly. Formal proof projects should retain their own bootstrap and cache ownership rather than use this test initializer.
+This optional test calls `startintlab`, which can write INTLAB's cache. Do not point it at a shared runtime being initialized or used by another job. It runs `testmm(288/512/540/1024)`, full-output signed point-interval checks and independent sampled nonpoint-interval checks at several thread limits. Without `INTLAB_ROOT`, INTLAB tests are skipped explicitly. Formal proof projects should retain their own bootstrap and cache ownership rather than use this test initializer.
 
 ## How it works
 
-On the tested system, `libBLAS.dylib` submits its parallel computation through `dispatch_apply_with_attr`. The patch interposes this call only when the immediate caller is `libBLAS.dylib`. It captures the caller's `fegetround()` result in a per-call block, sets that direction around each original callback, and restores the previous worker direction. The original iteration count, attributes and worker index are forwarded intact.
+The patch interposes `dispatch_apply_with_attr` and `dispatch_apply` only when the immediate caller is `libBLAS.dylib`. It captures the caller's rounding direction per call, applies it around each original callback, and restores the worker's previous direction. Iterations, queues, attributes and indices are forwarded intact.
+
+On non-SME hardware, it also filters the accelerator-selector field returned by `_get_cpu_capabilities` **only to libBLAS**. This selects Accelerate's own CPU kernels and their native parallel partitioning; it does not supply a replacement GEMM or force single threading. The selection is cached for the lifetime of the process and affects nearest-rounding performance too. SME/SME2 capabilities are preserved, so the M4 path is intended to remain unchanged, but ABI 2 has not been retested on M4. The selector is an undocumented implementation detail verified on the recorded OS, not a public Apple configuration API.
 
 There is no global "current requested mode" shared between simultaneous products. Tests include separate callers requesting upward and downward rounding concurrently. The interposer source is in [src/rounding_interpose.c](src/rounding_interpose.c); provenance is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
@@ -124,6 +156,6 @@ Limitations include the non-public dispatch ABI, other BLAS paths and data types
 
 Compatibility reports should include CPU, macOS build, MATLAB version/update, BLAS name, thread limit, tested sizes and the patch revision. An issue template is provided. Remove personal paths before posting logs.
 
-The first release is prepared as `0.1.0`; it has not been published by these setup scripts. See [release checklist](docs/releasing.md).
+The source now uses patch ABI 2. GitHub release tags, when present, identify a particular source revision; build and launch scripts never publish releases. See the [release checklist](docs/releasing.md).
 
 Project code is provided under the [MIT License](LICENSE). External dependencies retain their own terms; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

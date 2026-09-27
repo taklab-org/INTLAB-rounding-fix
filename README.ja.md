@@ -6,14 +6,44 @@ Apple Silicon版MATLAB R2026aとINTLABで観測した、Apple Accelerate BLASの
 
 **パッチ本体はApple Accelerate向けのC動的ライブラリです。** MATLAB／INTLABは調査のきっかけとなった利用例であり、パッチ本体はどちらにも依存しません。ビルド・MATLAB起動・試験実行にはBash、MATLAB／INTLAB内の検証にはMATLAB関数を使います。Pythonは不要です。
 
-各BLAS計算コールバックへ呼出し元の丸め方向を渡し、終了後にそのスレッドの元の方向へ戻します。**Accelerate自身の行列分割・計算カーネル・並列処理を維持します。** 行列積を単一スレッドへ変更する方式ではありません。
+各BLAS計算コールバックへ呼出し元の丸め方向を渡し、終了後にそのスレッドの元の方向へ戻します。**Accelerate自身の並列計算カーネルを使います。** ABI 2ではSME非搭載機の計算経路をCPU側へ切り替えます。 行列積を単一スレッドへ変更する方式ではありません。
 
 Apple／MathWorks／INTLABの公式修正ではなく、公開SDK外の入口を使います。OSやMATLABの更新後には再検証してください。[検証範囲と制限](docs/validation.md)
+
+## M3 Max対応の修正（ABI 2）
+
+旧ABI 1は今回のM3 Maxでは読み込みに成功しても包含検査に失敗しました。ABI 2は、BLASに限定した計算経路の選択と、`dispatch_apply`への丸め伝播を追加しています。dylibとMEXを再ビルドし、`scripts/matlab.sh`で新しいMATLABを起動してください。起動済みプロセスの計算経路は変更できません。
+
+M3 Max＋macOS 26.6.2＋R2026a Update 2＋INTLAB V13では、実doubleの行列積について、2つのprocess workerを含む検査を通過しました。Update 2全般の不具合、あるいはINTLABの全演算の安全性を示すものではありません。CPU経路への切替には速度上の代償があります。[原因の切り分けと検証記録](docs/m3-max-validation.md)
+
+## 自動選択と既存版の更新
+
+ランチャーがMATLAB起動前にパッチを読み込み、パッチがCPU機能に応じてBLASの経路を自動選択します。CPU名の指定や、利用者による `DYLD_INSERT_LIBRARIES` の設定は不要です。
+
+| 検出した機能 | 自動処理 |
+|---|---|
+| SME/SME2なし・アクセラレータ選択あり（実測したM3 Max） | AccelerateのCPUカーネルを選び、並列コールバックへ丸め方向を伝播 |
+| SME/SME2あり | Accelerate本来の選択を維持し、コールバックへ丸め方向を伝播 |
+| アクセラレータ選択なし | 既存の選択を維持し、コールバックへ丸め方向を伝播 |
+
+この表は機能による分岐を示すもので、各分類の全CPUでの数値保証を意味しません。ABI 2の数値検証は記載のM3 Max環境で実施済みです。SME分岐の選択ロジックは回帰テストで確認しますが、M4実機での再検証は未実施です。
+
+既存のリポジトリを更新する場合は、そのルートで次を実行してください。
+
+```sh
+git pull --ff-only
+./scripts/build.sh
+./scripts/test_native.sh
+./scripts/matlab.sh --check
+./scripts/matlab.sh
+```
+
+Gitの更新だけではビルド済みdylib/MEXは更新されないため、両方の再ビルドが必要です。旧ABI 1のビルド情報が残っている場合、ランチャーは再ビルドを案内して停止します。今回のM3 Maxでは `--check` が `ABI=2 cpuFallback=1` と上下方向の違反0件を表示します。`cpuFallback=0` は本来の経路を維持したことを表します。いずれも数値包含検査を通過したことを確認し、このランチャーから新しい計算プロセスを起動してください。
 
 ## 必要な環境
 
 - Apple Silicon Mac、macOS標準のBash、使用可能なApple Command Line ToolsまたはXcodeとmacOS SDK。
-- MATLABで使用する場合はApple Silicon版MATLAB。詳細な検証環境はM4 Pro、macOS 26.6.2、R2026a Update 5です。
+- MATLABで使用する場合はApple Silicon版MATLAB。ABI 2の検証環境はM3 Max、macOS 26.6.2、R2026a Update 2です。旧ABI 1はM4 Pro＋Update 5で検証しています。ABI 2のM4での再検証は未実施です。
 - INTLAB試験を行う場合だけ、別途用意したINTLAB。
 
 MATLAB・INTLAB・Appleのライブラリ本体やヘッダは同梱していません。ビルド成果物と環境固有の設定・ログは、Git管理対象外の`build/`へ保存します。
@@ -95,7 +125,7 @@ INTLAB_ROOT="/path/to/private/Intlab" \
 
 ## 適用範囲と解除
 
-パッチは `libBLAS.dylib` からの `dispatch_apply_with_attr` だけを対象にし、各呼出しに固有の丸め情報を渡します。異なる方向で同時に積を計算しても、一つのグローバル変数を上書きし合う設計ではありません。
+パッチは `libBLAS.dylib` からの `dispatch_apply_with_attr` と `dispatch_apply` を対象にし、各呼出しに固有の丸め情報を渡します。SME非搭載機では、同じくBLASからの `_get_cpu_capabilities` 呼出しに限って内部のアクセラレータ選択ビットをマスクし、AccelerateのCPU並列経路を選びます。選択はプロセス内でキャッシュされ、最近接丸めの積にも適用されます。SME/SME2搭載機は従来の選択を維持する設計ですが、ABI 2をM4で再検証した結果はまだありません。`rounding_patch_check` の `report.patch.cpuFallbackSelected` で選択を確認できます。異なる方向で同時に積を計算しても、一つのグローバル変数を上書きし合う設計ではありません。
 
 ランチャーはMATLAB起動時だけBLASとこのパッチを指定します。ホームの起動設定、launchdの共通環境、MATLAB本体、OSライブラリ、署名は変更しません。他のinterposerとの同時使用は検証していません。
 

@@ -31,6 +31,8 @@ common=("$cc" -O2 -Wall -Wextra -Werror -frounding-math -isysroot "$sdk")
 for name in witness stress benchmark; do
     "${common[@]}" -framework Accelerate "$ROOT/tests/$name.c" -o "$BUILD/$name"
 done
+"${common[@]}" -fblocks -framework Accelerate "$ROOT/tests/scope.c" -o "$BUILD/scope"
+"${common[@]}" "$ROOT/tests/policy.c" -o "$BUILD/policy"
 if [[ -n $matlab ]]; then
     lib="$matlab/bin/maca64"
     "${common[@]}" -fPIC -bundle "-I$matlab/extern/include" "-L$lib" "-Wl,-rpath,$lib" -lmex -lmx \
@@ -38,5 +40,5 @@ if [[ -n $matlab ]]; then
 fi
 # Plain data, never sourced as shell code. An empty root denotes native-only.
 printf '%s\n' "$matlab" > "$BUILD/matlab-root.txt"
-printf 'compiler=%s\nsdk=%s\npatch_abi=1\n' "$cc" "$sdk" > "$BUILD/build-info.txt"
+printf 'compiler=%s\nsdk=%s\npatch_abi=2\n' "$cc" "$sdk" > "$BUILD/build-info.txt"
 printf 'Built in %s\n' "$BUILD"

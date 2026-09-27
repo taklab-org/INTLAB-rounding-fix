@@ -8,7 +8,7 @@ Before publishing:
 2. Build from a clean checkout on the intended Apple Silicon environment. Run native tests, the MATLAB check and optional INTLAB tests. Record which tests were actually run.
 3. Review `git status` and the staged diff. Build products, generated local configuration and raw logs belong only under ignored `build/`; do not include MATLAB/INTLAB installations, headers, caches or personal startup settings.
 4. Commit the reviewed source using the owner's intended public Git identity. Use the existing `taklab-org/INTLAB-rounding-fix` repository and push the reviewed commit without overwriting unrelated remote work.
-5. Tag the reviewed commit as `v0.1.0` and create a prerelease describing the non-public API dependency and tested environment. Update the changelog when it is actually released.
+5. If a versioned release is requested, select a new unused version tag for that reviewed commit and describe the non-public API dependencies and tested environments. Do not move an existing release tag. Update the changelog when a release is actually published.
 
 Source distribution is the initial policy; users compile the dylib and MEX against their installed tools. No prebuilt binary is necessary for the first release. Avoid claims of general correctness based only on startup flags or scalar tests.
 

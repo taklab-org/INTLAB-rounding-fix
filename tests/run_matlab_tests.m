@@ -1,10 +1,13 @@
 function run_matlab_tests
 root=fileparts(fileparts(mfilename('fullpath')));
 addpath(fullfile(root,'matlab'),fullfile(root,'build'),fullfile(root,'tests'));
+resultFile=fullfile(root,'build','matlab-results.json');
+if isfile(resultFile), delete(resultFile); end
 reports=cell(1,5); sizes=[287 288 512 540 1024];
 for i=1:numel(sizes), reports{i}=rounding_patch_check(sizes(i)); end
 intlabRoot=getenv('INTLAB_ROOT');
 testedIntlab=false;
+extended=[];
 if ~isempty(intlabRoot)
     assert(isfile(fullfile(intlabRoot,'startintlab.m')),'Invalid INTLAB_ROOT.');
     % Explicit opt-in: startintlab can write its installation cache.
@@ -21,9 +24,10 @@ if ~isempty(intlabRoot)
     C=intval(A)*B; lo=inf(C); hi=sup(C);
     assert(all(isfinite(lo(:)) & isfinite(hi(:)) & lo(:)<=1 & hi(:)>=1+eps));
     testedIntlab=true;
+    extended=check_intlab_enclosures();
 end
-result=struct('checks',{reports},'intlabTested',testedIntlab);
-fid=fopen(fullfile(root,'build','matlab-results.json'),'w'); assert(fid~=-1);
+result=struct('checks',{reports},'intlabTested',testedIntlab,'enclosures',extended);
+fid=fopen(resultFile,'w'); assert(fid~=-1);
 cleanup=onCleanup(@() fclose(fid)); fprintf(fid,'%s\n',jsonencode(result));
 fprintf('MATLAB_TESTS_COMPLETE intlab=%d\n',testedIntlab);
 end

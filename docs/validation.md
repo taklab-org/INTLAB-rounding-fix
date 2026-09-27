@@ -1,6 +1,10 @@
 # Validation and limits
 
-## Recorded environment
+## Current revision
+
+ABI 2 adds the M3 Max repair and expands regression coverage. Its separate [M3 Max validation](m3-max-validation.md) records the new implementation, tests and performance limits. The M4 measurements below describe **ABI 1**, not a rerun of ABI 2. In particular, the original near-zero performance overhead does not apply to M3 CPU fallback.
+
+## Original recorded environment
 
 | Item | Recorded value |
 |---|---|
@@ -26,19 +30,21 @@ INTLAB V13's inspected multithreaded self-test used size 220, below the measured
 
 ## Tests included here
 
-The public source layout was rebuilt and tested independently, including a clean copy under a directory containing spaces. Native tests, MATLAB checks at five sizes, and the optional INTLAB testmm/containment tests passed. A sanitized, machine-readable summary is in [public-layout-validation.json](public-layout-validation.json). The interposer's numerical source remains unchanged from the original tested patch.
+The public source layout was rebuilt and tested independently, including a clean copy under a directory containing spaces. Native tests, MATLAB checks at five sizes, and the optional INTLAB testmm/containment tests passed. A sanitized, machine-readable summary is in [public-layout-validation.json](public-layout-validation.json). At that validation date, the interposer numerical source was unchanged from the original patch; ABI 2 subsequently changed kernel selection and added an ordinary apply wrapper.
 
 After replacing the Python utilities with macOS system Bash 3.2.57, the native and MATLAB/INTLAB tests above were rerun successfully. A clean copy under a path containing spaces passed native-only and MATLAB builds using the system `PATH`, native tests, and the MATLAB 512-size check. Native audit peaks were three overlapping callbacks for the witness and four for the stress test; the clean-copy MATLAB check observed two. Separate launcher interface checks covered quoted paths, argument forwarding, exit status and temporary-rc cleanup. The C interposer was not changed by this migration.
 
-`witness.c` checks all output entries for exact products with values ±(1+2^-54), at n=287,288,512,1024,2048, in both directed modes. It requests Accelerate-managed multithreading and never substitutes a manually partitioned or single-threaded product.
+`witness.c` checks all output entries for exact products with values ±(1+2^-54), at 18 sizes from 2 through 2048, in both directed modes, and checks caller rounding restoration. It requests Accelerate-managed multithreading and never substitutes a manually partitioned or single-threaded product.
 
 `stress.c` uses signed 53-bit integer numerators divided by 2^52. For 64 sampled outputs per product, it accumulates exact products independently in 128-bit integers and checks the directed BLAS result. It covers four shapes, all four transpose combinations, two rounding directions, and 40 calls from concurrent upward/downward callers. This samples 4,608 outputs, not every entry of every matrix.
+
+`policy.c` covers 128 synthetic capability combinations, including preservation of SME/SME2 and unrelated bits. This verifies automatic selection logic, not numerical behavior on untested hardware. `scope.c` verifies that non-BLAS capability and dispatch callers remain untouched.
 
 `run_matlab_tests.m` checks five sizes without INTLAB. If `INTLAB_ROOT` is supplied, it initializes that runtime, runs the unchanged `testmm.m` at four sizes, and checks a nonrepresentable exact interval product directly. No proprietary INTLAB code or runtime cache is included.
 
 Passing the included tests is evidence for these cases. Tests for complex numbers, single precision, every BLAS routine/path, subnormals, overflow and arbitrary formal proof workloads have not been completed. Only rounding direction is propagated; exception flags are not aggregated across workers and other floating-point controls are not synchronized.
 
-## Performance
+## Original ABI 1 performance
 
 The original benchmark used dense double DGEMM with exactly representable test sums, separate from the rounding-failure inputs. Each condition used three warmups, then seven groups of repeated products. Median times from two baseline and two patched runs were averaged; the order was baseline, patched, single-threaded, patched, baseline. Diagnostics were disabled. Other jobs on the machine were not stopped.
 

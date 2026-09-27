@@ -1,0 +1,453 @@
+{
+  "date": "2026-09-28",
+  "purpose": "Final source distribution with automatic CPU selection (ABI 2)",
+  "environment": {
+    "cpu": "Apple M3 Max, 14 cores",
+    "macos": "26.6.2 (25G83)",
+    "matlab": "26.1.0.3251617 (R2026a) Update 2",
+    "intlab": "V13 (private runtime)",
+    "blas": "Apple Accelerate BLAS (ILP64)",
+    "blasUuid": "23402175-D2CF-3B08-88D0-AFBBCF775FEF"
+  },
+  "sourceSha256": {
+    "src/rounding_interpose.c": "7c4e1cf71396a73b3bbe1afcfd1bc327823b28071dc2e3de9f401ca6aca82732",
+    "src/rounding_patch_status.c": "7e615f137c4c9c1aca1412f82fc4e3d73b32c3e485d7837a1dd6756d7900d381",
+    "src/rounding_policy.h": "3790937a9c44f689d9bd420cf6160628ba98eaf7e32f241f09783e903dd9f3ae",
+    "scripts/build.sh": "bdb101add31cb02d71b379c59c6b07831a5e97fba84a19a97d18f4a9394cf6c3",
+    "scripts/common.sh": "f6d9013471cc450de1641f1e4b9f7d5def8612b0cee4dec7c40aa958d67f5ded",
+    "scripts/matlab.sh": "93f28dce7e425d1905a4b66570b9298fdf76069446d639e867bddac3ec44518b",
+    "scripts/test_native.sh": "be9667438f86fb42dd4794d62ea5709d215e6ae3482432b3a1aa2b3f6db61761",
+    "matlab/rounding_patch_check.m": "ce30bf2a199f33c68fc2b2ead076eeaa4b472314d880da690e18fbacda8aaf9d",
+    "tests/benchmark.c": "f40e7b7045ba35e781d8c871e487af1e985cb912e513a6e7a70cfada094e346c",
+    "tests/check_intlab_enclosures.m": "9fdd7015027af5d60f1dee04b796834dc5c6a932973ca901fb03a75385c7092e",
+    "tests/policy.c": "a19c0bee038c7eb5dbc85844dbebbba7fab82aba16f65c1383d8a27f8e74d3f4",
+    "tests/run_matlab_tests.m": "489784b05d130d2765f653bcb54189b4de474994b13daacaad3633b8d37a9c25",
+    "tests/scope.c": "46fa4389fea21dc7033378f22a76c60be6f0d352d4b8ff7dbd20eb54c38eb773",
+    "tests/startup.m": "b0ab395cbdf765a357166868b006fe1aab9576e78a6442c6f54e3de4286f044a",
+    "tests/stress.c": "7ed35b53bdf297b451e9143aa5ea6e47f3babd69e89e5ddd51b0d22a1619d2cf",
+    "tests/testmm.m": "b2a3ed25dbc44f64acfed82d09ec0c22885843bd50445d8b2ce33b88dde75a00",
+    "tests/witness.c": "bee7a2c277b3a4539a8a8f832c52dd4e6a4ed954b9a93257d4167d3cc1f23aa4"
+  },
+  "cleanSourceDirectoryWithSpaces": true,
+  "native": [
+    {
+      "test": "witness",
+      "patched": false,
+      "exit_code": 1
+    },
+    {
+      "test": "stress",
+      "patched": false,
+      "exit_code": 1
+    },
+    {
+      "test": "witness",
+      "patched": true,
+      "exit_code": 0
+    },
+    {
+      "test": "stress",
+      "patched": true,
+      "exit_code": 0
+    },
+    {
+      "test": "scope",
+      "patched": true,
+      "exit_code": 0
+    },
+    {
+      "test": "policy",
+      "patched": true,
+      "exit_code": 0
+    }
+  ],
+  "policySyntheticCasesPassed": 128,
+  "matlab": {
+    "checks": [
+      {
+        "matlab": "26.1.0.3251617 (R2026a) Update 2",
+        "computer": "MACA64",
+        "blas": "Apple Accelerate BLAS (ILP64)",
+        "threadLimit": 14,
+        "size": 287,
+        "badDown": 0,
+        "badUp": 0,
+        "patch": {
+          "abi": 2,
+          "auditEnabled": true,
+          "stats": [
+            2,
+            1,
+            2,
+            24,
+            20,
+            20,
+            9,
+            10,
+            2,
+            2,
+            0,
+            2
+          ],
+          "rounding": 0,
+          "cpuFallbackSelected": true,
+          "capabilityQueries": 2,
+          "attributeApplyCalls": 0,
+          "applyCalls": 2
+        }
+      },
+      {
+        "matlab": "26.1.0.3251617 (R2026a) Update 2",
+        "computer": "MACA64",
+        "blas": "Apple Accelerate BLAS (ILP64)",
+        "threadLimit": 14,
+        "size": 288,
+        "badDown": 0,
+        "badUp": 0,
+        "patch": {
+          "abi": 2,
+          "auditEnabled": true,
+          "stats": [
+            2,
+            1,
+            4,
+            48,
+            41,
+            41,
+            12,
+            12,
+            2,
+            2,
+            0,
+            4
+          ],
+          "rounding": 0,
+          "cpuFallbackSelected": true,
+          "capabilityQueries": 2,
+          "attributeApplyCalls": 0,
+          "applyCalls": 4
+        }
+      },
+      {
+        "matlab": "26.1.0.3251617 (R2026a) Update 2",
+        "computer": "MACA64",
+        "blas": "Apple Accelerate BLAS (ILP64)",
+        "threadLimit": 14,
+        "size": 512,
+        "badDown": 0,
+        "badUp": 0,
+        "patch": {
+          "abi": 2,
+          "auditEnabled": true,
+          "stats": [
+            2,
+            1,
+            6,
+            72,
+            63,
+            63,
+            12,
+            12,
+            2,
+            2,
+            0,
+            6
+          ],
+          "rounding": 0,
+          "cpuFallbackSelected": true,
+          "capabilityQueries": 2,
+          "attributeApplyCalls": 0,
+          "applyCalls": 6
+        }
+      },
+      {
+        "matlab": "26.1.0.3251617 (R2026a) Update 2",
+        "computer": "MACA64",
+        "blas": "Apple Accelerate BLAS (ILP64)",
+        "threadLimit": 14,
+        "size": 540,
+        "badDown": 0,
+        "badUp": 0,
+        "patch": {
+          "abi": 2,
+          "auditEnabled": true,
+          "stats": [
+            2,
+            1,
+            8,
+            96,
+            85,
+            85,
+            12,
+            12,
+            2,
+            2,
+            0,
+            8
+          ],
+          "rounding": 0,
+          "cpuFallbackSelected": true,
+          "capabilityQueries": 2,
+          "attributeApplyCalls": 0,
+          "applyCalls": 8
+        }
+      },
+      {
+        "matlab": "26.1.0.3251617 (R2026a) Update 2",
+        "computer": "MACA64",
+        "blas": "Apple Accelerate BLAS (ILP64)",
+        "threadLimit": 14,
+        "size": 1024,
+        "badDown": 0,
+        "badUp": 0,
+        "patch": {
+          "abi": 2,
+          "auditEnabled": true,
+          "stats": [
+            2,
+            1,
+            10,
+            120,
+            107,
+            107,
+            12,
+            12,
+            2,
+            2,
+            0,
+            10
+          ],
+          "rounding": 0,
+          "cpuFallbackSelected": true,
+          "capabilityQueries": 2,
+          "attributeApplyCalls": 0,
+          "applyCalls": 10
+        }
+      }
+    ],
+    "intlabTested": true,
+    "enclosures": {
+      "passed": true,
+      "cases": 224,
+      "fullEntries": 42817320.0,
+      "sampledNonpointEntries": 2048,
+      "sizes": [
+        2,
+        17,
+        127,
+        287,
+        288,
+        512,
+        540,
+        1024
+      ],
+      "threadLimits": [
+        1,
+        2,
+        4,
+        14
+      ]
+    }
+  },
+  "workers": [
+    {
+      "smokePassed": true,
+      "cacheUnchanged": true,
+      "checks": [
+        {
+          "matlab": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "threadLimit": 2,
+          "size": 512,
+          "badDown": 0,
+          "badUp": 0,
+          "patch": {
+            "abi": 2,
+            "auditEnabled": true,
+            "stats": [
+              2,
+              1,
+              54,
+              298,
+              214,
+              214,
+              12,
+              12,
+              2,
+              2,
+              0,
+              54
+            ],
+            "rounding": 0,
+            "cpuFallbackSelected": true,
+            "capabilityQueries": 2,
+            "attributeApplyCalls": 0,
+            "applyCalls": 54
+          }
+        },
+        {
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "matlabVersion": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "threadLimit": 2,
+          "size": 512,
+          "badDown": 0,
+          "badUp": 0,
+          "badEnclosures": 0,
+          "passed": true,
+          "patch": []
+        },
+        {
+          "matlab": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "threadLimit": 4,
+          "size": 1024,
+          "badDown": 0,
+          "badUp": 0,
+          "patch": {
+            "abi": 2,
+            "auditEnabled": true,
+            "stats": [
+              2,
+              1,
+              60,
+              370,
+              279,
+              279,
+              12,
+              12,
+              2,
+              2,
+              0,
+              60
+            ],
+            "rounding": 0,
+            "cpuFallbackSelected": true,
+            "capabilityQueries": 2,
+            "attributeApplyCalls": 0,
+            "applyCalls": 60
+          }
+        },
+        {
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "matlabVersion": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "threadLimit": 4,
+          "size": 1024,
+          "badDown": 0,
+          "badUp": 0,
+          "badEnclosures": 0,
+          "passed": true,
+          "patch": []
+        }
+      ]
+    },
+    {
+      "smokePassed": true,
+      "cacheUnchanged": true,
+      "checks": [
+        {
+          "matlab": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "threadLimit": 2,
+          "size": 512,
+          "badDown": 0,
+          "badUp": 0,
+          "patch": {
+            "abi": 2,
+            "auditEnabled": true,
+            "stats": [
+              2,
+              1,
+              54,
+              298,
+              237,
+              237,
+              12,
+              12,
+              2,
+              2,
+              0,
+              54
+            ],
+            "rounding": 0,
+            "cpuFallbackSelected": true,
+            "capabilityQueries": 2,
+            "attributeApplyCalls": 0,
+            "applyCalls": 54
+          }
+        },
+        {
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "matlabVersion": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "threadLimit": 2,
+          "size": 512,
+          "badDown": 0,
+          "badUp": 0,
+          "badEnclosures": 0,
+          "passed": true,
+          "patch": []
+        },
+        {
+          "matlab": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "threadLimit": 4,
+          "size": 1024,
+          "badDown": 0,
+          "badUp": 0,
+          "patch": {
+            "abi": 2,
+            "auditEnabled": true,
+            "stats": [
+              2,
+              1,
+              60,
+              370,
+              302,
+              302,
+              12,
+              12,
+              2,
+              2,
+              0,
+              60
+            ],
+            "rounding": 0,
+            "cpuFallbackSelected": true,
+            "capabilityQueries": 2,
+            "attributeApplyCalls": 0,
+            "applyCalls": 60
+          }
+        },
+        {
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "matlabVersion": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "threadLimit": 4,
+          "size": 1024,
+          "badDown": 0,
+          "badUp": 0,
+          "badEnclosures": 0,
+          "passed": true,
+          "patch": []
+        }
+      ]
+    }
+  ],
+  "staleAbi1LaunchRejected": true,
+  "defaultLaunchCpuFallbackVerified": true,
+  "matlabCodeAnalyzerPassed": true,
+  "limits": [
+    "SME policy branch tested with synthetic inputs; ABI 2 not rerun on M4 hardware",
+    "Numerical tests cover specified real dense double cases, not every INTLAB operation"
+  ],
+  "notes": [
+    "Earlier investigation hashes and timings remain in m3-max-validation.json; this file identifies the final packaged source",
+    "INTLAB initialization and cleanup emitted graphics warnings; numerical checks completed and MATLAB exited successfully"
+  ]
+}

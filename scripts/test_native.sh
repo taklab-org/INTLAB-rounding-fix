@@ -7,7 +7,7 @@ if [[ ${1:-} == --help ]]; then printf '%s\n' 'Usage: scripts/test_native.sh'; e
 require_arm64
 library="$BUILD/libaccelerate_rounding.dylib"
 [[ -f $library ]] || die 'Run scripts/build.sh first (optionally --native-only).'
-for name in witness stress; do [[ -x $BUILD/$name ]] || die "Missing executable: $BUILD/$name"; done
+for name in witness stress scope policy; do [[ -x $BUILD/$name ]] || die "Missing executable: $BUILD/$name"; done
 # Remove stale success summaries before running. Publish JSON only on success.
 rm -f "$BUILD/native-results.json"
 summary=$(mktemp "$BUILD/native-results.XXXXXX")
@@ -49,6 +49,15 @@ for mode in baseline patched; do
         printf '%s %s\n' "$label" "$result"
     done
 done
+(
+    export ACCELERATE_ROUNDING_AUDIT=1 DYLD_INSERT_LIBRARIES="$library"
+    exec "$BUILD/scope"
+) > "$BUILD/scope-patched.log" 2>&1 || die 'BLAS-only interposition scope test failed.'
+grep -q 'SCOPE_COMPLETE passed=1' "$BUILD/scope-patched.log" || die 'Missing scope completion marker.'
+printf '%s  {"test":"scope","patched":true,"exit_code":0}' "$separator" >> "$summary"
+"$BUILD/policy" > "$BUILD/policy.log" 2>&1 || die 'Automatic CPU-selection policy test failed.'
+grep -q 'POLICY_COMPLETE cases=128 passed=1' "$BUILD/policy.log" || die 'Missing policy completion marker.'
+printf '%s  {"test":"policy","patched":true,"exit_code":0}' "$separator" >> "$summary"
 printf '\n]\n' >> "$summary"
 mv "$summary" "$BUILD/native-results.json"
 printf 'NATIVE_TESTS_COMPLETE\n'

@@ -18,6 +18,8 @@ require_arm64
 patch="$BUILD/libaccelerate_rounding.dylib"
 [[ -f $patch && -f $BUILD/matlab-root.txt ]] || die 'Run scripts/build.sh first.'
 [[ -f $BUILD/rounding_patch_status.mexmaca64 ]] || die 'MATLAB MEX is missing; build without --native-only first.'
+[[ -f $BUILD/build-info.txt ]] && grep -qx 'patch_abi=2' "$BUILD/build-info.txt" ||
+    die 'This launcher requires patch ABI 2; rerun scripts/build.sh to update the dylib and MEX.'
 if [[ -z $matlab ]]; then
     matlab=${MATLAB_ROOT:-}
     if [[ -z $matlab ]]; then IFS= read -r matlab < "$BUILD/matlab-root.txt"; fi

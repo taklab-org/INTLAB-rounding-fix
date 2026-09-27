@@ -1,0 +1,304 @@
+{
+  "date": "2026-09-28",
+  "environment": {
+    "cpu": "Apple M3 Max, 14 cores",
+    "macos": "26.6.2 (25G83)",
+    "matlab": "26.1.0.3251617 (R2026a) Update 2",
+    "intlab": "V13 (private runtime)",
+    "blas": "Apple Accelerate BLAS (ILP64)",
+    "blasUuid": "23402175-D2CF-3B08-88D0-AFBBCF775FEF"
+  },
+  "patchAbi": 2,
+  "sha256": {
+    "src/rounding_interpose.c": "35cef0b9294468f767dd0486e46ec3e5d775f99259957b77d0ed0275bfd58815",
+    "src/rounding_patch_status.c": "7e615f137c4c9c1aca1412f82fc4e3d73b32c3e485d7837a1dd6756d7900d381",
+    "tests/witness.c": "bee7a2c277b3a4539a8a8f832c52dd4e6a4ed954b9a93257d4167d3cc1f23aa4",
+    "tests/stress.c": "7ed35b53bdf297b451e9143aa5ea6e47f3babd69e89e5ddd51b0d22a1619d2cf",
+    "tests/scope.c": "46fa4389fea21dc7033378f22a76c60be6f0d352d4b8ff7dbd20eb54c38eb773",
+    "tests/check_intlab_enclosures.m": "9fdd7015027af5d60f1dee04b796834dc5c6a932973ca901fb03a75385c7092e",
+    "build/libaccelerate_rounding.dylib": "68de6b0e1fff071423bb31b9226dbed0901bc72842bd9b983f6d0c24e61b1fca",
+    "build/rounding_patch_status.mexmaca64": "681ce98d4035de338ae98ad720ede3a52fc72c4a26d2a9c759f6e5d616293849"
+  },
+  "native": [
+    {
+      "test": "witness",
+      "patched": false,
+      "exit_code": 1
+    },
+    {
+      "test": "stress",
+      "patched": false,
+      "exit_code": 1
+    },
+    {
+      "test": "witness",
+      "patched": true,
+      "exit_code": 0
+    },
+    {
+      "test": "stress",
+      "patched": true,
+      "exit_code": 0
+    },
+    {
+      "test": "scope",
+      "patched": true,
+      "exit_code": 0
+    }
+  ],
+  "originalTestmmSizesPassed": [
+    288,
+    512,
+    540,
+    1024
+  ],
+  "extendedIntlab": {
+    "passed": true,
+    "cases": 224,
+    "fullEntries": 42817320.0,
+    "sampledNonpointEntries": 2048,
+    "sizes": [
+      2,
+      17,
+      127,
+      287,
+      288,
+      512,
+      540,
+      1024
+    ],
+    "threadLimits": [
+      1,
+      2,
+      4,
+      14
+    ]
+  },
+  "workers": [
+    {
+      "smokePassed": true,
+      "cacheUnchanged": true,
+      "abi": 2,
+      "cpuFallbackSelected": true,
+      "checks": [
+        {
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "matlabVersion": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "threadLimit": 2,
+          "size": 512,
+          "badDown": 0,
+          "badUp": 0,
+          "badEnclosures": 0,
+          "passed": true,
+          "patch": []
+        },
+        {
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "matlabVersion": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "threadLimit": 4,
+          "size": 1024,
+          "badDown": 0,
+          "badUp": 0,
+          "badEnclosures": 0,
+          "passed": true,
+          "patch": []
+        }
+      ]
+    },
+    {
+      "smokePassed": true,
+      "cacheUnchanged": true,
+      "abi": 2,
+      "cpuFallbackSelected": true,
+      "checks": [
+        {
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "matlabVersion": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "threadLimit": 2,
+          "size": 512,
+          "badDown": 0,
+          "badUp": 0,
+          "badEnclosures": 0,
+          "passed": true,
+          "patch": []
+        },
+        {
+          "blas": "Apple Accelerate BLAS (ILP64)",
+          "matlabVersion": "26.1.0.3251617 (R2026a) Update 2",
+          "computer": "MACA64",
+          "threadLimit": 4,
+          "size": 1024,
+          "badDown": 0,
+          "badUp": 0,
+          "badEnclosures": 0,
+          "passed": true,
+          "patch": []
+        }
+      ]
+    }
+  ],
+  "benchmark": {
+    "method": "One baseline then one patched run, audit disabled, no overlapping task-owned computations; three warmups and medians of seven groups. Other host jobs were not stopped.",
+    "baseline": [
+      {
+        "single": 0,
+        "n": 512,
+        "rounding": "nearest",
+        "median_ms": 0.3773,
+        "min_ms": 0.37528,
+        "max_ms": 0.6189,
+        "checksum": "-0x1.144cp+0"
+      },
+      {
+        "single": 0,
+        "n": 512,
+        "rounding": "up",
+        "median_ms": 0.37688,
+        "min_ms": 0.37624,
+        "max_ms": 0.37768,
+        "checksum": "-0x1.144cp+0"
+      },
+      {
+        "single": 0,
+        "n": 1024,
+        "rounding": "nearest",
+        "median_ms": 2.97856,
+        "min_ms": 2.9,
+        "max_ms": 3.01856,
+        "checksum": "0x1.d2fp-1"
+      },
+      {
+        "single": 0,
+        "n": 1024,
+        "rounding": "up",
+        "median_ms": 3.0124,
+        "min_ms": 2.98614,
+        "max_ms": 3.0436,
+        "checksum": "0x1.d2fp-1"
+      },
+      {
+        "single": 0,
+        "n": 2048,
+        "rounding": "nearest",
+        "median_ms": 23.336533,
+        "min_ms": 23.307733,
+        "max_ms": 23.410533,
+        "checksum": "0x1.23d8p+1"
+      },
+      {
+        "single": 0,
+        "n": 2048,
+        "rounding": "up",
+        "median_ms": 23.173133,
+        "min_ms": 23.139667,
+        "max_ms": 23.340467,
+        "checksum": "0x1.23d8p+1"
+      },
+      {
+        "single": 0,
+        "n": 4096,
+        "rounding": "nearest",
+        "median_ms": 188.28325,
+        "min_ms": 187.90475,
+        "max_ms": 188.4905,
+        "checksum": "0x1.f162p+1"
+      },
+      {
+        "single": 0,
+        "n": 4096,
+        "rounding": "up",
+        "median_ms": 188.299,
+        "min_ms": 187.90725,
+        "max_ms": 188.493,
+        "checksum": "0x1.f162p+1"
+      }
+    ],
+    "patched": [
+      {
+        "single": 0,
+        "n": 512,
+        "rounding": "nearest",
+        "median_ms": 1.09366,
+        "min_ms": 1.07588,
+        "max_ms": 1.10486,
+        "checksum": "-0x1.144cp+0"
+      },
+      {
+        "single": 0,
+        "n": 512,
+        "rounding": "up",
+        "median_ms": 1.08624,
+        "min_ms": 1.06422,
+        "max_ms": 1.1271,
+        "checksum": "-0x1.144cp+0"
+      },
+      {
+        "single": 0,
+        "n": 1024,
+        "rounding": "nearest",
+        "median_ms": 6.80158,
+        "min_ms": 6.79754,
+        "max_ms": 6.85434,
+        "checksum": "0x1.d2fp-1"
+      },
+      {
+        "single": 0,
+        "n": 1024,
+        "rounding": "up",
+        "median_ms": 6.87808,
+        "min_ms": 6.8297,
+        "max_ms": 6.94736,
+        "checksum": "0x1.d2fp-1"
+      },
+      {
+        "single": 0,
+        "n": 2048,
+        "rounding": "nearest",
+        "median_ms": 38.701,
+        "min_ms": 37.8684,
+        "max_ms": 39.164867,
+        "checksum": "0x1.23d8p+1"
+      },
+      {
+        "single": 0,
+        "n": 2048,
+        "rounding": "up",
+        "median_ms": 38.498067,
+        "min_ms": 37.862,
+        "max_ms": 39.609067,
+        "checksum": "0x1.23d8p+1"
+      },
+      {
+        "single": 0,
+        "n": 4096,
+        "rounding": "nearest",
+        "median_ms": 265.19525,
+        "min_ms": 264.089,
+        "max_ms": 272.7225,
+        "checksum": "0x1.f162p+1"
+      },
+      {
+        "single": 0,
+        "n": 4096,
+        "rounding": "up",
+        "median_ms": 277.917,
+        "min_ms": 270.14925,
+        "max_ms": 283.87275,
+        "checksum": "0x1.f162p+1"
+      }
+    ]
+  },
+  "limits": [
+    "Real double dense matrix products only",
+    "Native stress and nonpoint interval references sample outputs",
+    "ABI 2 not retested on M4",
+    "Undocumented BLAS accelerator selector requires OS revalidation",
+    "MATLAB thread limits are requested settings, not measured worker limits"
+  ],
+  "auditDisabledNativeWitnessPassed": true,
+  "defaultMatlabLaunchPassed": true,
+  "matlabCodeAnalyzerPassed": true
+}
